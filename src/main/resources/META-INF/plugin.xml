@@ -26,9 +26,13 @@
     </extensions>
 
     <actions>
-        <action id="StackOverflow.AskQuestion.ToolsMenu"
-                class="com.example.repeatconfiguration.RepeatConfigurationAction">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        <action id="com.example.repeatconfiguration.RepeatConfigurationAction"
+                class="com.example.repeatconfiguration.RepeatConfigurationAction" text="Debug (Repeat)" icon="AllIcons.Actions.Refresh">
+            <add-to-group group-id="ToolbarRunGroup" anchor="last"/>
+        </action>
+        <action id="com.example.repeatconfiguration.StopRepeatConfigurationAction"
+                class="com.example.repeatconfiguration.StopRepeatConfigurationAction" text="Stop Debug (Repeat)" icon="AllIcons.Actions.StopRefresh">
+            <add-to-group group-id="ToolbarRunGroup" anchor="last"/>
         </action>
     </actions>
 </idea-plugin>
