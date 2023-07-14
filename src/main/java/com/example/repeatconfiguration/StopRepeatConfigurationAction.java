@@ -1,12 +1,7 @@
 package com.example.repeatconfiguration;
 
-import com.intellij.execution.ExecutionException;
-import com.intellij.execution.Executor;
-import com.intellij.execution.RunManager;
-import com.intellij.execution.RunnerAndConfigurationSettings;
-import com.intellij.execution.configurations.RunConfiguration;
-import com.intellij.execution.executors.DefaultDebugExecutor;
-import com.intellij.execution.runners.ExecutionEnvironmentBuilder;
+import com.intellij.execution.ExecutionManager;
+import com.intellij.execution.process.ProcessHandler;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
@@ -24,21 +19,14 @@ public class StopRepeatConfigurationAction extends AnAction {
             return;
         }
 
-        RunnerAndConfigurationSettings selectedConfiguration = RunManager.getInstance(project).getSelectedConfiguration();
-
-        if (selectedConfiguration == null) {
-            return;
-        }
-
-        RunConfiguration configuration = selectedConfiguration.getConfiguration();
-        ApplicationManager.getApplication().invokeLater(() -> stopDebugger(project, configuration));
-
         MessageBusConnection connection = ConnectionManager.getConnection();
 
         if (connection != null) {
             connection.disconnect();
             ConnectionManager.setConnection(null);
         }
+
+        ApplicationManager.getApplication().invokeLater(() -> stopDebugger(project));
     }
 
     @Override
@@ -47,12 +35,11 @@ public class StopRepeatConfigurationAction extends AnAction {
         e.getPresentation().setEnabled(connection != null);
     }
 
-    private void stopDebugger(Project project, RunConfiguration runConfiguration) {
-        Executor executor = DefaultDebugExecutor.getDebugExecutorInstance();
-//
-//        try {
-//            ExecutionEnvironmentBuilder.create(project, executor, runConfiguration).buildAndExecute();
-//        } catch (ExecutionException ignored) {
-//        }
+    private void stopDebugger(Project project) {
+        ProcessHandler[] runningProcesses = ExecutionManager.getInstance(project).getRunningProcesses();
+
+        for (ProcessHandler runningProcess : runningProcesses) {
+            runningProcess.destroyProcess();
+        }
     }
 }
