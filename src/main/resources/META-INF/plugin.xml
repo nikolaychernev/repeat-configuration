@@ -22,7 +22,13 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-
+        <applicationService
+                serviceImplementation="com.example.repeatconfiguration.settings.AppSettingsState"/>
+        <applicationConfigurable
+                parentId="tools"
+                instance="com.example.repeatconfiguration.settings.AppSettingsConfigurable"
+                id="com.example.repeatconfiguration.settings.AppSettingsConfigurable"
+                displayName="Repeat Configuration"/>
     </extensions>
 
     <actions>

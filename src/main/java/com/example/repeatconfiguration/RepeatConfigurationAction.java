@@ -1,5 +1,6 @@
 package com.example.repeatconfiguration;
 
+import com.example.repeatconfiguration.settings.AppSettingsState;
 import com.intellij.execution.*;
 import com.intellij.execution.configurations.RunConfiguration;
 import com.intellij.execution.executors.DefaultDebugExecutor;
@@ -8,11 +9,16 @@ import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.concurrent.TimeUnit;
+
 public class RepeatConfigurationAction extends AnAction {
+
+    private static final AppSettingsState STATE = AppSettingsState.getInstance();
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
@@ -29,7 +35,7 @@ public class RepeatConfigurationAction extends AnAction {
         }
 
         RunConfiguration configuration = selectedConfiguration.getConfiguration();
-        startDebugger(project, configuration);
+        ApplicationManager.getApplication().invokeLater(() -> startDebugger(project, configuration, false));
 
         MessageBusConnection connection = ConnectionManager.getConnection();
 
@@ -43,9 +49,11 @@ public class RepeatConfigurationAction extends AnAction {
         connection.subscribe(ExecutionManager.EXECUTION_TOPIC, new ExecutionListener() {
             @Override
             public void processTerminated(@NotNull String executorId, @NotNull ExecutionEnvironment env, @NotNull ProcessHandler handler, int exitCode) {
-                if (env.getRunProfile().getName().equals(configuration.getName())) {
-                    startDebugger(project, configuration);
+                if (!env.getRunProfile().getName().equals(configuration.getName())) {
+                    return;
                 }
+
+                ApplicationManager.getApplication().invokeLater(() -> startDebugger(project, configuration, true));
             }
         });
     }
@@ -56,13 +64,19 @@ public class RepeatConfigurationAction extends AnAction {
         e.getPresentation().setEnabled(connection == null);
     }
 
-    private void startDebugger(Project project, RunConfiguration runConfiguration) {
+    private void startDebugger(Project project, RunConfiguration runConfiguration, boolean timeout) {
+        if (timeout) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(STATE.debugSleepTimeMs);
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
         Executor executor = DefaultDebugExecutor.getDebugExecutorInstance();
 
         try {
-            ExecutionEnvironmentBuilder
-                    .create(project, executor, runConfiguration)
-                    .buildAndExecute();
+            ExecutionEnvironmentBuilder.create(project, executor, runConfiguration).buildAndExecute();
         } catch (ExecutionException ignored) {
         }
     }
